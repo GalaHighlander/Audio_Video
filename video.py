@@ -1,6 +1,9 @@
 import copy
 import struct
 from PIL import Image
+from lab2 import *
+
+
 YMatrix = [[0 for i in range(800)] for j in range(600)]
 UMatrix = [[0 for i in range(800)] for j in range(600)]
 VMatrix = [[0 for i in range(800)] for j in range(600)]
@@ -132,57 +135,40 @@ def encode():
 
     Vlist = devideIntoMatrix(VMatrix, "V")
 
-    return Ylist, Ulist, Vlist
+# lab2
+    fdctYlist = fdct(Ylist)
+    fdctUlist = fdct(Ulist)
+    fdctVlist = fdct(Vlist)
+
+    quantizationYlist = quantizate(fdctYlist)
+    quantizationUlist = quantizate(fdctUlist)
+    quantizationVlist = quantizate(fdctVlist)
+
+    return quantizationYlist, quantizationUlist, quantizationVlist
 
 
 def recreateBigMatrix(list):
-    if list[0].blockType == "Y":
-        YMatrix2 = [[0 for i in range(800)] for j in range(600)]
-        i4X4 = 0
-        j4X4 = 0
-        for block in list:
-            x8X8 = block.blockX
-            y8X8 = block.blockY
-            minimatrix = block.blockMatrix
-            i4X4 = 0
-            j4X4 = 0
-            while True:
-                YMatrix2[x8X8][y8X8] = minimatrix[i4X4][j4X4]
-                j4X4 = j4X4+1
-                y8X8 = y8X8+1
-                if j4X4 == 8:
-                    i4X4 = i4X4+1
-                    j4X4 = 0
-                    x8X8 = x8X8+1
-                    y8X8 = block.blockY
-                if i4X4 == 8:
-                    break
-        return YMatrix2
-    else:
-        UorVMatrix = [[0 for i4X4 in range(800)] for j4X4 in range(600)]
-        i4X4 = 0
-        j4X4 = 0
-        for block in list:
-            x8X8 = block.blockX
-            y8X8 = block.blockY
-            minimatrix = block.blockMatrix
-            i4X4 = 0
-            j4X4 = 0
-            while True:
-                UorVMatrix[x8X8][y8X8] = minimatrix[i4X4][j4X4]
-                UorVMatrix[x8X8+1][y8X8] = minimatrix[i4X4][j4X4]
-                UorVMatrix[x8X8][y8X8+1] = minimatrix[i4X4][j4X4]
-                UorVMatrix[x8X8+1][y8X8+1] = minimatrix[i4X4][j4X4]
-                j4X4 = j4X4+1
-                y8X8 = y8X8+2
-                if j4X4 == 4:
-                    i4X4 = i4X4+1
-                    j4X4 = 0
-                    x8X8 = x8X8+2
-                    y8X8 = block.blockY
-                if i4X4 == 4:
-                    break
-        return UorVMatrix
+    BigMatrix = [[0 for i in range(800)] for j in range(600)]
+    i = 0
+    j = 0
+    for block in list:
+        x = block.blockX
+        y = block.blockY
+        minimatrix = block.blockMatrix
+        i = 0
+        j = 0
+        while True:
+            BigMatrix[x][y] = minimatrix[i][j]
+            j = j+1
+            y = y+1
+            if j == 8:
+                i = i+1
+                j = 0
+                x = x+1
+                y = block.blockY
+            if i == 8:
+                break
+    return BigMatrix
 
 
 def convertMatrixToRGB(Ylist, Ulist, Vlist):
@@ -226,9 +212,20 @@ def writeToFile(RMatrix, GMatrix, BMatrix):
 
 
 def decode(Ymat, Umat, Vmat):
-    decodedY = recreateBigMatrix(Ymat)
-    decodedU = recreateBigMatrix(Umat)
-    decodedV = recreateBigMatrix(Vmat)
+
+    # lab2
+    dequantizateY = dequantizate(Ymat)
+    dequantizateU = dequantizate(Umat)
+    dequantizateV = dequantizate(Vmat)
+
+    Ymatrix = idct(dequantizateY)
+    Umatrix = idct(dequantizateU)
+    Vmatrix = idct(dequantizateV)
+    # lab2 finished
+
+    decodedY = recreateBigMatrix(Ymatrix)
+    decodedU = recreateBigMatrix(Umatrix)
+    decodedV = recreateBigMatrix(Vmatrix)
 
     RMatrixDecoded, GMatrixDecoded, BMatrixDecoded = convertMatrixToRGB(
         decodedY, decodedU, decodedV)
